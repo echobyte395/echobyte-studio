@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+
+  <style>
+
+    body {
+      background:#0f172a;
+      color:white;
+      font-family:Arial;
+
+      display:flex;
+      justify-content:center;
+      align-items:center;
+
+      height:100vh;
+    }
+
+    .box {
+      background:#1e293b;
+      padding:40px;
+      border-radius:20px;
+      width:300px;
+    }
+
+    input {
+      width:100%;
+      padding:12px;
+      margin-top:15px;
+
+      border:none;
+      border-radius:10px;
+    }
+
+    button {
+      width:100%;
+      padding:12px;
+      margin-top:20px;
+
+      border:none;
+      border-radius:10px;
+
+      background:#38bdf8;
+
+      color:black;
+      font-weight:bold;
+
+      cursor:pointer;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h1>🔒 Admin Login</h1>
+
+  <input
+    id="password"
+    type="password"
+    placeholder="Mot de passe"
+  >
+
+  <button onclick="login()">
+    Connexion
+  </button>
+
+</div>
+
+<script>
+
+function login() {
+
+  const pass =
+    document.getElementById("password").value;
+
+  window.location.href =
+    `/dashboard?password=${pass}&code=qrcode`;
+
+}
+
+</script>
+
+</body>
+</html>
