@@ -2,7 +2,6 @@ const express = require("express");
 const axios = require("axios");
 const useragent = require("useragent");
 const path = require("path");
-const nodemailer = require("nodemailer");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -17,16 +16,6 @@ const PASSWORD = "Riri2002213";
 
 const REDIRECT_URL =
   "https://echobytestudio.pages.dev";
-
-/* ---------------- EMAIL ---------------- */
-
-const mailer = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "TONEMAIL@gmail.com",
-    pass: "TON_MOT_DE_PASSE_APP"
-  }
-});
 
 /* ---------------- SUPABASE ---------------- */
 
@@ -67,7 +56,7 @@ app.get("/r/:code", async (req, res) => {
     longitude: null
   };
 
-  /* -------- GEO -------- */
+  /* -------- GEO LOOKUP -------- */
 
   try {
     const r = await axios.get(
@@ -81,7 +70,9 @@ app.get("/r/:code", async (req, res) => {
       latitude: r.data.latitude,
       longitude: r.data.longitude
     };
-  } catch {}
+  } catch (e) {
+    console.log("Geo error:", e.message);
+  }
 
   /* -------- SAVE SUPABASE -------- */
 
@@ -102,31 +93,6 @@ app.get("/r/:code", async (req, res) => {
     ]);
   } catch (e) {
     console.log("Supabase error:", e.message);
-  }
-
-  /* -------- EMAIL NOTIFICATION -------- */
-
-  try {
-    await mailer.sendMail({
-      from: "QR Tracker <TONEMAIL@gmail.com>",
-      to: "TONEMAIL@gmail.com",
-      subject: "🔔 Nouveau scan QR",
-
-      text:
-`QR SCANNÉ 🚨
-
-🌍 Pays: ${geo.country}
-🏙️ Ville: ${geo.city}
-💻 OS: ${ua.os}
-📱 Navigateur: ${ua.family}
-🔳 Code: ${code}
-🕒 ${new Date().toLocaleString()}
-
-IP: ${ip}`
-    });
-
-  } catch (e) {
-    console.log("Email error:", e.message);
   }
 
   /* -------- REDIRECT -------- */
@@ -167,10 +133,18 @@ app.get("/dashboard", (req, res) => {
   );
 });
 
+/* ---------------- LOGIN ---------------- */
+
+app.get("/login", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "login.html")
+  );
+});
+
 /* ---------------- HOME ---------------- */
 
 app.get("/", (req, res) => {
-  res.send("🚀 QR Tracker PRO MAX ONLINE");
+  res.send("🚀 QR Tracker ONLINE");
 });
 
 /* ---------------- START ---------------- */
