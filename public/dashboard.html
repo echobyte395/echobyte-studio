@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
+
 <head>
-  <title>QR Dashboard</title>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>QR Tracker PRO MAX</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -13,42 +22,125 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<div class="topbar">
-  <h1>📊 QR Analytics PRO MAX</h1>
-</div>
+  <!-- BACKGROUND -->
 
-<div class="cards">
+  <div class="bg"></div>
 
-  <div class="card">
-    <h2>Total scans</h2>
-    <p id="total">0</p>
-  </div>
+  <!-- TOPBAR -->
 
-  <div class="card">
-    <h2>Pays uniques</h2>
-    <p id="countries">0</p>
-  </div>
+  <header class="topbar">
 
-  <div class="card">
-    <h2>Villes uniques</h2>
-    <p id="cities">0</p>
-  </div>
+    <div>
+      <h1>🚀 QR Tracker PRO MAX</h1>
 
-</div>
+      <p>
+        Analytics temps réel
+      </p>
+    </div>
 
-<div class="chartBox">
-  <canvas id="chart"></canvas>
-</div>
+    <div class="status">
+      🟢 ONLINE
+    </div>
 
-<div id="map"></div>
+  </header>
 
-<table id="table"></table>
+  <!-- STATS -->
 
-<script src="app.js"></script>
+  <section class="cards">
+
+    <div class="card">
+
+      <h2>Total scans</h2>
+
+      <p id="total">0</p>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Pays uniques</h2>
+
+      <p id="countries">0</p>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Villes uniques</h2>
+
+      <p id="cities">0</p>
+
+    </div>
+
+  </section>
+
+  <!-- QR GENERATOR -->
+
+  <section class="generator">
+
+    <h2>🔳 Générateur QR</h2>
+
+    <div class="generatorRow">
+
+      <input
+        id="newQR"
+        placeholder="Nom du QR"
+      >
+
+      <button onclick="generateQR()">
+        Générer
+      </button>
+
+    </div>
+
+    <div class="qrBox">
+
+      <img id="qrImage">
+
+    </div>
+
+  </section>
+
+  <!-- GRAPH -->
+
+  <section class="chartBox">
+
+    <h2>📈 Répartition des scans</h2>
+
+    <canvas id="chart"></canvas>
+
+  </section>
+
+  <!-- MAP -->
+
+  <section class="mapBox">
+
+    <h2>🗺️ Carte mondiale</h2>
+
+    <div id="map"></div>
+
+  </section>
+
+  <!-- TABLE -->
+
+  <section class="tableBox">
+
+    <h2>📋 Derniers scans</h2>
+
+    <div class="tableWrapper">
+
+      <table id="table"></table>
+
+    </div>
+
+  </section>
+
+  <script src="app.js"></script>
 
 </body>
 </html>
