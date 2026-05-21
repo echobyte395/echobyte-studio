@@ -1,19 +1,18 @@
 {
   "name": "qr-tracker-pro",
   "version": "1.0.0",
+  "description": "QR Tracker PRO MAX",
   "main": "server.js",
   "type": "commonjs",
-
   "scripts": {
     "start": "node server.js"
   },
-
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.6.0",
     "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
     "qrcode": "^1.5.3",
     "useragent": "^2.3.0"
-    "node-fetch": "^2.7.0"
   }
 }
