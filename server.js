@@ -2,7 +2,10 @@ const express = require("express");
 const axios = require("axios");
 const useragent = require("useragent");
 const path = require("path");
-const { createClient } = require("@supabase/supabase-js");
+const fetch = require("node-fetch");
+
+const { createClient } =
+  require("@supabase/supabase-js");
 
 const app = express();
 
@@ -10,16 +13,24 @@ app.use(express.static("public"));
 
 /* ---------------- CONFIG ---------------- */
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 3000;
 
-const PASSWORD = "Riri2002213";
+const PASSWORD =
+  "Riri2002213";
 
 const REDIRECT_URL =
   "https://echobytestudio.pages.dev";
 
-/* ---------------- SUPABASE ---------------- */
+/* ---------------- NTFY ---------------- */
 
-// ✅ récupère les secrets depuis Render
+// ⚠️ CHANGE CE NOM
+// mets un truc impossible à deviner
+
+const NTFY_TOPIC =
+  "riri-qr-9482-xp-ultra";
+
+/* ---------------- SUPABASE ---------------- */
 
 const supabaseUrl =
   process.env.SUPABASE_URL;
@@ -28,7 +39,10 @@ const supabaseKey =
   process.env.SUPABASE_KEY;
 
 const supabase =
-  createClient(supabaseUrl, supabaseKey);
+  createClient(
+    supabaseUrl,
+    supabaseKey
+  );
 
 /* ---------------- IP ---------------- */
 
@@ -50,13 +64,15 @@ function getIP(req) {
   return ip;
 }
 
-/* ---------------- TRACK QR ---------------- */
+/* ---------------- QR TRACK ---------------- */
 
 app.get("/r/:code", async (req, res) => {
 
-  const code = req.params.code;
+  const code =
+    req.params.code;
 
-  const ip = getIP(req);
+  const ip =
+    getIP(req);
 
   const ua =
     useragent.parse(
@@ -71,43 +87,128 @@ app.get("/r/:code", async (req, res) => {
     longitude: null
   };
 
+  /* -------- GEO -------- */
+
   try {
 
-    const r = await axios.get(
-      `https://ipapi.co/${ip}/json/`
-    );
+    const r =
+      await axios.get(
+        `https://ipapi.co/${ip}/json/`
+      );
 
     geo = {
-      country: r.data.country_name,
-      city: r.data.city,
-      region: r.data.region,
-      latitude: r.data.latitude,
-      longitude: r.data.longitude
+
+      country:
+        r.data.country_name,
+
+      city:
+        r.data.city,
+
+      region:
+        r.data.region,
+
+      latitude:
+        r.data.latitude,
+
+      longitude:
+        r.data.longitude
+
     };
 
   } catch {}
 
-  // ✅ SAVE TO SUPABASE
+  /* -------- SAVE -------- */
 
   await supabase
     .from("scans")
     .insert([
       {
+
         code,
+
         ip,
-        country: geo.country,
-        city: geo.city,
-        region: geo.region,
-        os: ua.os.toString(),
-        browser: ua.family,
-        latitude: geo.latitude,
-        longitude: geo.longitude,
+
+        country:
+          geo.country,
+
+        city:
+          geo.city,
+
+        region:
+          geo.region,
+
+        os:
+          ua.os.toString(),
+
+        browser:
+          ua.family,
+
+        latitude:
+          geo.latitude,
+
+        longitude:
+          geo.longitude,
+
         created_at:
           new Date().toISOString()
+
       }
     ]);
 
-  res.redirect(REDIRECT_URL);
+  /* -------- PUSH NOTIF -------- */
+
+  try {
+
+    await fetch(
+      `https://ntfy.sh/${NTFY_TOPIC}`,
+      {
+
+        method: "POST",
+
+        headers: {
+
+          Title:
+            "🔔 Nouveau scan QR",
+
+          Priority:
+            "urgent",
+
+          Tags:
+            "warning,globe"
+
+        },
+
+        body:
+
+`🌍 Pays : ${geo.country}
+
+🏙️ Ville : ${geo.city}
+
+💻 OS : ${ua.os}
+
+📱 Navigateur : ${ua.family}
+
+🔳 QR : ${code}
+
+🕒 ${new Date().toLocaleString()}`
+
+      }
+    );
+
+  } catch (e) {
+
+    console.log(
+      "Erreur notif",
+      e
+    );
+
+  }
+
+  /* -------- REDIRECT -------- */
+
+  res.redirect(
+    REDIRECT_URL
+  );
 
 });
 
@@ -123,7 +224,8 @@ app.get("/stats/:code", async (req, res) => {
     return res
       .status(401)
       .json({
-        error: "Unauthorized"
+        error:
+          "Unauthorized"
       });
 
   }
@@ -132,10 +234,15 @@ app.get("/stats/:code", async (req, res) => {
     await supabase
       .from("scans")
       .select("*")
-      .eq("code", req.params.code);
+      .eq(
+        "code",
+        req.params.code
+      );
 
   if (error) {
+
     return res.json([]);
+
   }
 
   res.json(data);
@@ -150,7 +257,11 @@ app.get("/dashboard", (req, res) => {
     req.query.password;
 
   if (pass !== PASSWORD) {
-    return res.redirect("/login.html");
+
+    return res.redirect(
+      "/login.html"
+    );
+
   }
 
   res.sendFile(
@@ -192,7 +303,8 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
 
   console.log(
-    "🚀 Server running on port " + PORT
+    "🚀 Server running on port " +
+    PORT
   );
 
 });
