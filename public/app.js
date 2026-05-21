@@ -1,74 +1,143 @@
-const params = new URLSearchParams(window.location.search);
+const params =
+  new URLSearchParams(
+    window.location.search
+  );
 
-const code = params.get("code") || "qrcode";
+const code =
+  params.get("code") || "qrcode";
 
-const password = params.get("password");
+const password =
+  params.get("password");
 
-fetch(`/stats/${code}?password=${password}`)
-  .then(r => r.json())
-  .then(data => {
+/* ---------------- ELEMENTS ---------------- */
 
-    /* -------- TOTAL -------- */
+const totalEl =
+  document.getElementById("total");
 
-    document.getElementById("total")
-      .textContent = data.length;
+const countriesEl =
+  document.getElementById("countries");
 
-    /* -------- COUNTRIES -------- */
+const citiesEl =
+  document.getElementById("cities");
 
-    const countries = {};
+const table =
+  document.getElementById("table");
 
-    data.forEach(d => {
-      countries[d.country] =
-        (countries[d.country] || 0) + 1;
-    });
+/* ---------------- MAP ---------------- */
 
-    document.getElementById("countries")
-      .textContent = Object.keys(countries).length;
+const map =
+  L.map("map")
+    .setView([20, 0], 2);
 
-    /* -------- CITIES -------- */
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution: "Map"
+  }
+).addTo(map);
 
-    const cities = {};
+let markers = [];
 
-    data.forEach(d => {
-      cities[d.city] =
-        (cities[d.city] || 0) + 1;
-    });
+/* ---------------- CHART ---------------- */
 
-    document.getElementById("cities")
-      .textContent = Object.keys(cities).length;
+const chart = new Chart(
+  document.getElementById("chart"),
+  {
+    type: "bar",
 
-    /* -------- GRAPH -------- */
-
-    new Chart(document.getElementById("chart"), {
-
-      type: "bar",
-
-      data: {
-        labels: Object.keys(countries),
-
-        datasets: [{
+    data: {
+      labels: [],
+      datasets: [
+        {
           label: "Scans",
-          data: Object.values(countries)
-        }]
-      }
-    });
+          data: []
+        }
+      ]
+    }
+  }
+);
 
-    /* -------- MAP -------- */
+/* ---------------- SOUND ---------------- */
 
-    const map = L.map("map")
-      .setView([20, 0], 2);
+const audio = new Audio(
+  "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
+);
 
-    L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        attribution: "Map"
-      }
-    ).addTo(map);
+/* ---------------- LOAD ---------------- */
 
-    data.forEach(d => {
+async function loadStats() {
 
-      if (d.latitude && d.longitude) {
+  const r = await fetch(
+    `/stats/${code}?password=${encodeURIComponent(password)}`
+  );
 
+  const data = await r.json();
+
+  /* -------- TOTAL -------- */
+
+  totalEl.textContent =
+    data.length;
+
+  /* -------- COUNTRIES -------- */
+
+  const countries = {};
+
+  data.forEach(d => {
+
+    const c =
+      d.country || "unknown";
+
+    countries[c] =
+      (countries[c] || 0) + 1;
+
+  });
+
+  countriesEl.textContent =
+    Object.keys(countries).length;
+
+  /* -------- CITIES -------- */
+
+  const cities = {};
+
+  data.forEach(d => {
+
+    const c =
+      d.city || "unknown";
+
+    cities[c] =
+      (cities[c] || 0) + 1;
+
+  });
+
+  citiesEl.textContent =
+    Object.keys(cities).length;
+
+  /* -------- CHART -------- */
+
+  chart.data.labels =
+    Object.keys(countries);
+
+  chart.data.datasets[0].data =
+    Object.values(countries);
+
+  chart.update();
+
+  /* -------- MAP -------- */
+
+  markers.forEach(m => {
+    map.removeLayer(m);
+  });
+
+  markers = [];
+
+  data.forEach(d => {
+
+    if (
+      d.latitude &&
+      d.longitude
+    ) {
+
+      const marker =
         L.marker([
           d.latitude,
           d.longitude
@@ -80,35 +149,110 @@ fetch(`/stats/${code}?password=${password}`)
           ${d.os}
         `);
 
-      }
+      markers.push(marker);
 
-    });
-
-    /* -------- TABLE -------- */
-
-    const table =
-      document.getElementById("table");
-
-    table.innerHTML = `
-      <tr>
-        <th>Heure</th>
-        <th>Pays</th>
-        <th>Ville</th>
-        <th>OS</th>
-        <th>Navigateur</th>
-        <th>IP</th>
-      </tr>
-
-      ${data.slice(-50).reverse().map(d => `
-        <tr>
-          <td>${new Date(d.time).toLocaleString()}</td>
-          <td>${d.country}</td>
-          <td>${d.city}</td>
-          <td>${d.os}</td>
-          <td>${d.browser}</td>
-          <td>${d.ip}</td>
-        </tr>
-      `).join("")}
-    `;
+    }
 
   });
+
+  /* -------- TABLE -------- */
+
+  table.innerHTML = `
+
+    <tr>
+      <th>Heure</th>
+      <th>Pays</th>
+      <th>Ville</th>
+      <th>OS</th>
+      <th>Navigateur</th>
+    </tr>
+
+    ${data.slice().reverse().map(d => `
+
+      <tr>
+        <td>
+          ${new Date(
+            d.created_at
+          ).toLocaleString()}
+        </td>
+
+        <td>${d.country}</td>
+
+        <td>${d.city}</td>
+
+        <td>${d.os}</td>
+
+        <td>${d.browser}</td>
+
+      </tr>
+
+    `).join("")}
+
+  `;
+
+  /* -------- NOTIF -------- */
+
+  if (
+    window.lastCount &&
+    data.length > window.lastCount
+  ) {
+
+    audio.play();
+
+    const latest =
+      data[data.length - 1];
+
+    showPopup(latest);
+
+  }
+
+  window.lastCount =
+    data.length;
+
+}
+
+/* ---------------- POPUP ---------------- */
+
+function showPopup(scan) {
+
+  const div =
+    document.createElement("div");
+
+  div.className = "popup";
+
+  div.innerHTML = `
+    🔔 Nouveau scan<br>
+    ${scan.country} - ${scan.city}
+  `;
+
+  document.body.appendChild(div);
+
+  setTimeout(() => {
+    div.remove();
+  }, 4000);
+
+}
+
+/* ---------------- AUTO REFRESH ---------------- */
+
+loadStats();
+
+setInterval(loadStats, 5000);
+
+/* ---------------- QR GENERATOR ---------------- */
+
+function generateQR() {
+
+  const codeInput =
+    document.getElementById("newQR").value;
+
+  const url =
+    `${window.location.origin}/r/${codeInput}`;
+
+  const img =
+    document.getElementById("qrImage");
+
+  img.src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+
+}
