@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const useragent = require("useragent");
 const path = require("path");
+const nodemailer = require("nodemailer");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -17,10 +18,15 @@ const PASSWORD = "Riri2002213";
 const REDIRECT_URL =
   "https://echobytestudio.pages.dev";
 
-/* ---------------- NTFY ---------------- */
+/* ---------------- EMAIL ---------------- */
 
-const NTFY_TOPIC =
-  "riri-qr-9482-xp-ultra";
+const mailer = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "TONEMAIL@gmail.com",
+    pass: "TON_MOT_DE_PASSE_APP"
+  }
+});
 
 /* ---------------- SUPABASE ---------------- */
 
@@ -29,7 +35,7 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-/* ---------------- GET IP ---------------- */
+/* ---------------- IP ---------------- */
 
 function getIP(req) {
   let ip =
@@ -41,9 +47,7 @@ function getIP(req) {
     ip = ip.split(",")[0];
   }
 
-  if (ip === "::1") {
-    ip = "127.0.0.1";
-  }
+  if (ip === "::1") ip = "127.0.0.1";
 
   return ip;
 }
@@ -53,7 +57,6 @@ function getIP(req) {
 app.get("/r/:code", async (req, res) => {
   const code = req.params.code;
   const ip = getIP(req);
-
   const ua = useragent.parse(req.headers["user-agent"]);
 
   let geo = {
@@ -64,7 +67,7 @@ app.get("/r/:code", async (req, res) => {
     longitude: null
   };
 
-  /* -------- GEO IP -------- */
+  /* -------- GEO -------- */
 
   try {
     const r = await axios.get(
@@ -78,9 +81,7 @@ app.get("/r/:code", async (req, res) => {
       latitude: r.data.latitude,
       longitude: r.data.longitude
     };
-  } catch (e) {
-    console.log("Geo error", e.message);
-  }
+  } catch {}
 
   /* -------- SAVE SUPABASE -------- */
 
@@ -100,32 +101,32 @@ app.get("/r/:code", async (req, res) => {
       }
     ]);
   } catch (e) {
-    console.log("Supabase error", e.message);
+    console.log("Supabase error:", e.message);
   }
 
-  /* -------- NTFY NOTIFICATION -------- */
+  /* -------- EMAIL NOTIFICATION -------- */
 
   try {
-    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Title: "🔔 Nouveau scan QR",
-        Priority: "high",
-        Tags: "warning,globe"
-      },
-      body: JSON.stringify({
-        message:
-`🌍 Pays: ${geo.country}
+    await mailer.sendMail({
+      from: "QR Tracker <TONEMAIL@gmail.com>",
+      to: "TONEMAIL@gmail.com",
+      subject: "🔔 Nouveau scan QR",
+
+      text:
+`QR SCANNÉ 🚨
+
+🌍 Pays: ${geo.country}
 🏙️ Ville: ${geo.city}
 💻 OS: ${ua.os}
-📱 Browser: ${ua.family}
-🔳 QR: ${code}
-🕒 ${new Date().toLocaleString()}`
-      })
+📱 Navigateur: ${ua.family}
+🔳 Code: ${code}
+🕒 ${new Date().toLocaleString()}
+
+IP: ${ip}`
     });
+
   } catch (e) {
-    console.log("NTFY error", e.message);
+    console.log("Email error:", e.message);
   }
 
   /* -------- REDIRECT -------- */
@@ -147,9 +148,7 @@ app.get("/stats/:code", async (req, res) => {
     .select("*")
     .eq("code", req.params.code);
 
-  if (error) {
-    return res.json([]);
-  }
+  if (error) return res.json([]);
 
   res.json(data);
 });
@@ -165,14 +164,6 @@ app.get("/dashboard", (req, res) => {
 
   res.sendFile(
     path.join(__dirname, "public", "dashboard.html")
-  );
-});
-
-/* ---------------- LOGIN ---------------- */
-
-app.get("/login", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "login.html")
   );
 });
 
